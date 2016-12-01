@@ -25,6 +25,7 @@ import net.corda.node.services.messaging.ArtemisMessagingServer.NodeLoginModule.
 import org.apache.activemq.artemis.api.core.SimpleString
 import org.apache.activemq.artemis.core.config.BridgeConfiguration
 import org.apache.activemq.artemis.core.config.Configuration
+import org.apache.activemq.artemis.core.config.CoreQueueConfiguration
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl
 import org.apache.activemq.artemis.core.config.impl.SecurityConfiguration
 import org.apache.activemq.artemis.core.security.Role
@@ -105,14 +106,6 @@ class ArtemisMessagingServer(override val config: NodeConfiguration,
         running = false
     }
 
-    fun bridgeToNetworkMapService(networkMapService: NetworkMapAddress) {
-        val query = activeMQServer.queueQuery(NETWORK_MAP_ADDRESS)
-        if (!query.isExists) {
-            activeMQServer.createQueue(NETWORK_MAP_ADDRESS, NETWORK_MAP_ADDRESS, null, true, false)
-        }
-        maybeDeployBridgeForAddress(networkMapService)
-    }
-
     /**
      * The bridge will be created automatically when the queues are created, however, this is not the case when the network map restarted.
      * The queues are restored from the journal, and because the queues are added before we register the callback handler, this method will never get called for existing queues.
@@ -173,7 +166,7 @@ class ArtemisMessagingServer(override val config: NodeConfiguration,
     private fun maybeDeployBridgeForNode(queueName: SimpleString, nodeInfo: NodeInfo) {
         log.debug("Deploying bridge for $queueName to $nodeInfo")
         val address = nodeInfo.address
-        if (address is NodeAddress) {
+        if (address is ArtemisPeerAddress) {
             maybeDeployBridgeForAddress(NodeAddress(queueName, address.hostAndPort))
         } else {
             log.error("Don't know how to deal with $address")
@@ -225,6 +218,36 @@ class ArtemisMessagingServer(override val config: NodeConfiguration,
         // password is changed from the default (as warned in the docs). Since we don't need this feature we turn it off
         // by having its password be an unknown securely random 128-bit value.
         clusterPassword = BigInteger(128, newSecureRandom()).toString(16)
+
+        this.queueConfigurations.addAll(listOf(
+                CoreQueueConfiguration().apply {
+                    address = NETWORK_MAP_ADDRESS
+                    name = NETWORK_MAP_ADDRESS
+                    isDurable = true
+                },
+                CoreQueueConfiguration().apply {
+                    address = P2P_QUEUE
+                    name = P2P_QUEUE
+                    isDurable = true
+                },
+                // Create an RPC queue: this will service locally connected clients only (not via a bridge) and those
+                // clients must have authenticated. We could use a single consumer for everything and perhaps we should,
+                // but these queues are not worth persisting.
+                CoreQueueConfiguration().apply {
+                    name = RPC_REQUESTS_QUEUE
+                    address = RPC_REQUESTS_QUEUE
+                    isDurable = false
+                },
+                // The custom name for the queue is intentional - we may wish other things to subscribe to the
+                // NOTIFICATIONS_ADDRESS with different filters in future
+                CoreQueueConfiguration().apply {
+                    name = RPC_QUEUE_REMOVALS_QUEUE
+                    address = NOTIFICATIONS_ADDRESS
+                    isDurable = false
+                    filterString = "_AMQ_NotifType = 1"
+                }
+        ))
+
         configureAddressSecurity()
     }
 
@@ -284,7 +307,7 @@ class ArtemisMessagingServer(override val config: NodeConfiguration,
 
     private fun bridgeExists(name: String) = activeMQServer.clusterManager.bridges.containsKey(name)
 
-    private fun maybeDeployBridgeForAddress(peerAddress: ArtemisPeerAddress) {
+    fun maybeDeployBridgeForAddress(peerAddress: ArtemisPeerAddress) {
         if (!connectorExists(peerAddress.hostAndPort)) {
             addConnector(peerAddress.hostAndPort)
         }
