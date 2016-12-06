@@ -14,12 +14,7 @@ sealed class ServiceType(val id: String) {
         require(id.matches(Regex("[a-z][a-zA-Z0-9._]+")))
     }
 
-    private class ServiceTypeImpl(baseId: String, subTypeId: String) : ServiceType("$baseId.$subTypeId") {
-        init {
-            // only allowed one level of subtype
-            require(subTypeId.matches(Regex("[a-z]\\w+")))
-        }
-    }
+    private class ServiceTypeImpl(baseId: String, subTypeId: String) : ServiceType("$baseId.$subTypeId")
 
     private class ServiceTypeDirect(id: String) : ServiceType(id)
 

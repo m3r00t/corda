@@ -1,6 +1,7 @@
-package net.corda.bank.flow
+package net.corda.flows
 
 import co.paralleluniverse.fibers.Suspendable
+import net.corda.core.ThreadBox
 import net.corda.core.contracts.*
 import net.corda.core.crypto.Party
 import net.corda.core.crypto.SecureHash
@@ -43,7 +44,7 @@ object IssuerFlow {
      * Returns the generated transaction representing the transfer of the [Issued] [FungibleAsset] to the issue requester.
      */
     class Issuer(val otherParty: Party): FlowLogic<SignedTransaction>() {
-        override val progressTracker: ProgressTracker = Issuer.tracker()
+        override val progressTracker: ProgressTracker = tracker()
         companion object {
             object AWAITING_REQUEST : ProgressTracker.Step("Awaiting issuance request")
             object ISSUING : ProgressTracker.Step("Self issuing asset")
@@ -67,9 +68,12 @@ object IssuerFlow {
             return txn
         }
 
+        // TODO: resolve race conditions caused by the 2 separate Cashflow commands (Issue and Pay) not reusing the same
+        //       state references (thus causing Notarisation double spend exceptions).
         @Suspendable
         private fun issueCashTo(amount: Amount<Currency>,
                                 issueTo: Party, issuerPartyRef: OpaqueBytes): SignedTransaction {
+            // TODO: pass notary in as request parameter
             val notaryParty = serviceHub.networkMapCache.notaryNodes[0].notaryIdentity
             // invoke Cash subflow to issue Asset
             progressTracker.currentStep = ISSUING

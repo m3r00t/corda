@@ -50,6 +50,9 @@ dependencies {
     compile project(':finance')
     compile project(':test-utils')
 
+    // Corda Plugins: dependent flows and services
+    compile project(':samples:bank-of-corda-demo')
+
     // Javax is required for webapis
     compile "org.glassfish.jersey.core:jersey-server:${jersey_version}"
 
