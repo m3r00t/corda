@@ -13,6 +13,7 @@ import net.corda.core.seconds
 import net.corda.node.internal.Node
 import net.corda.node.services.User
 import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.CLIENTS_PREFIX
+import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.INTERNAL_PREFIX
 import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.NETWORK_MAP_ADDRESS
 import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.NOTIFICATIONS_ADDRESS
 import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.P2P_QUEUE
@@ -70,27 +71,31 @@ abstract class MQSecurityTest : NodeBasedTest() {
     }
 
     @Test
-    fun `send message to peer address`() {
+    fun `send message to address of peer which has been communicated with`() {
         val bobParty = startBobAndCommunicateWithAlice()
         assertSendAttackFails("$PEERS_PREFIX${bobParty.owningKey.toBase58String()}")
     }
 
     @Test
+    fun `create queue for peer which has not been communciated with`() {
+        val bob = startNode("Bob")
+        assertAllQueueCreationAttacksFail("$PEERS_PREFIX${bob.info.legalIdentity.owningKey.toBase58String()}")
+    }
+
+    @Test
     fun `create queue for unknown peer`() {
         val invalidPeerQueue = "$PEERS_PREFIX${generateKeyPair().public.composite.toBase58String()}"
-        assertNonTempQueueCreationAttackFails(invalidPeerQueue, durable = true)
-        assertNonTempQueueCreationAttackFails(invalidPeerQueue, durable = false)
-        assertTempQueueCreationAttackFails(invalidPeerQueue)
+        assertAllQueueCreationAttacksFail(invalidPeerQueue)
     }
 
     @Test
     fun `consume message from network map queue`() {
-        assertConsumeAttackFails(NETWORK_MAP_ADDRESS.toString())
+        assertConsumeAttackFails(NETWORK_MAP_ADDRESS)
     }
 
     @Test
     fun `send message to network map address`() {
-        assertSendAttackFails(NETWORK_MAP_ADDRESS.toString())
+        assertSendAttackFails(NETWORK_MAP_ADDRESS)
     }
 
     @Test
@@ -133,11 +138,15 @@ abstract class MQSecurityTest : NodeBasedTest() {
     }
 
     @Test
+    fun `create random internal queue`() {
+        val randomQueue = "$INTERNAL_PREFIX${random63BitValue()}"
+        assertAllQueueCreationAttacksFail(randomQueue)
+    }
+
+    @Test
     fun `create random queue`() {
         val randomQueue = random63BitValue().toString()
-        assertNonTempQueueCreationAttackFails(randomQueue, durable = false)
-        assertNonTempQueueCreationAttackFails(randomQueue, durable = true)
-        assertTempQueueCreationAttackFails(randomQueue)
+        assertAllQueueCreationAttacksFail(randomQueue)
     }
 
     fun clientTo(target: HostAndPort): SimpleMQClient {
@@ -162,6 +171,12 @@ abstract class MQSecurityTest : NodeBasedTest() {
         val rpcClient = loginToRPC(alice.configuration.artemisAddress, rpcUser)
         val clientQueueQuery = SimpleString("$CLIENTS_PREFIX${rpcUser.username}.rpc.*")
         return rpcClient.session.addressQuery(clientQueueQuery).queueNames.single().toString()
+    }
+
+    fun assertAllQueueCreationAttacksFail(queue: String) {
+        assertNonTempQueueCreationAttackFails(queue, durable = true)
+        assertNonTempQueueCreationAttackFails(queue, durable = false)
+        assertTempQueueCreationAttackFails(queue)
     }
 
     fun assertTempQueueCreationAttackFails(queue: String) {

@@ -15,7 +15,7 @@ import kotlin.concurrent.thread
 
 /**
  * Extend this class if you need to run nodes in a test. You could use the driver DSL but it's extremely slow for testing
- * purposes.
+ * purposes. Use the DSL if you need to run the nodes in separate processes otherwise this class will suffice.
  */
 abstract class NodeBasedTest {
     @Rule
@@ -37,11 +37,16 @@ abstract class NodeBasedTest {
 
     fun startNode(legalName: String, rpcUsers: List<User> = emptyList()): Node {
         return startNode(legalName, mapOf(
-                "networkMapAddress" to networkMapNode.configuration.artemisAddress.toString(),
-                "rpcUsers" to rpcUsers.map { mapOf(
-                        "user" to it.username,
-                        "password" to it.password,
-                        "permissions" to it.permissions)
+                "networkMapService" to mapOf(
+                        "address" to networkMapNode.configuration.artemisAddress.toString(),
+                        "legalName" to networkMapNode.info.legalIdentity.name
+                ),
+                "rpcUsers" to rpcUsers.map {
+                    mapOf(
+                            "user" to it.username,
+                            "password" to it.password,
+                            "permissions" to it.permissions
+                    )
                 }
         ))
     }

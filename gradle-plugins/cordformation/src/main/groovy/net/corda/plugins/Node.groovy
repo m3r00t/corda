@@ -1,7 +1,7 @@
 package net.corda.plugins
 
-import com.typesafe.config.*
 import org.gradle.api.Project
+import com.typesafe.config.*
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
@@ -122,11 +122,14 @@ class Node {
      *
      * @warning This should not be directly set unless you know what you are doing. Use the networkMapName in the
      *          Cordform task instead.
-     * @param networkMapAddress Network map address.
+     * @param networkMapAddress Network map node address.
+     * @param networkMapLegalName Network map node legal name.
      */
-    void networkMapAddress(String networkMapAddress) {
-        config = config.withValue("networkMapAddress",
-                ConfigValueFactory.fromAnyRef(networkMapAddress))
+    void networkMapAddress(String networkMapAddress, String networkMapLegalName) {
+        def networkMapService = new HashMap()
+        networkMapService.put("address", networkMapAddress)
+        networkMapService.put("legalName", networkMapLegalName)
+        config = config.withValue("networkMapService", ConfigValueFactory.fromMap(networkMapService))
     }
 
     Node(Project project) {

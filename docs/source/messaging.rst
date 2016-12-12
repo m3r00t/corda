@@ -87,15 +87,12 @@ Clients attempting to connect to the node's broker fall in one of four groups:
 #. Anyone connecting with the username ``SystemUsers/Node`` is treated as the node hosting the broker, or a logical
    component of the node. The TLS certificate they provide must match the one broker has for the node. If that's the case
    they are given full access to all valid queues, otherwise they are rejected.
-
 #. Anyone connecting with the username ``SystemUsers/Peer`` is treated as a peer on the same Corda network as the node. Their
    TLS root CA must be the same as the node's root CA - the root CA is the doorman of the network and having the same root CA
    implies we've been let in by the same doorman. If they are part of the same network then they are only given permission
    to send to our ``p2p.inbound`` queue, otherwise they are rejected.
-
 #. Every other username is treated as a RPC user and authenticated against the node's list of valid RPC users. If that
    is successful then they are only given sufficient permission to perform RPC, otherwise they are rejected.
-
 #. Clients connecting without a username and password are rejected.
 
 Artemis provides a feature of annotating each received message with the validated user. This allows the node's messaging
@@ -106,6 +103,9 @@ the validated user is the username itself and the RPC framework uses this to det
 
 .. note:: ``Party`` lookup is currently done by the legal name which isn't guaranteed to be unique. A future version will
    use the full X.500 name as it can provide additional structures for uniqueness.
+
+The broker also does host verification when connecting to another peer. It checks that the TLS certificate common name
+matches with the advertised legal name from the network map service.
 
 Messaging types
 ---------------

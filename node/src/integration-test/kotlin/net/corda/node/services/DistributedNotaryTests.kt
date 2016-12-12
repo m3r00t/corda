@@ -10,7 +10,6 @@ import net.corda.core.crypto.Party
 import net.corda.core.crypto.composite
 import net.corda.core.crypto.generateKeyPair
 import net.corda.core.getOrThrow
-import net.corda.core.messaging.SingleMessageRecipient
 import net.corda.core.node.services.ServiceInfo
 import net.corda.core.random63BitValue
 import net.corda.core.serialization.serialize
@@ -19,9 +18,11 @@ import net.corda.flows.NotaryError
 import net.corda.flows.NotaryException
 import net.corda.flows.NotaryFlow
 import net.corda.node.internal.AbstractNode
+import net.corda.node.internal.NetworkMapInfo
 import net.corda.node.internal.Node
 import net.corda.node.services.config.ConfigHelper
 import net.corda.node.services.config.FullNodeConfiguration
+import net.corda.node.services.messaging.ArtemisMessagingComponent.NetworkMapAddress
 import net.corda.node.services.network.NetworkMapService
 import net.corda.node.services.transactions.RaftValidatingNotaryService
 import net.corda.node.utilities.databaseTransaction
@@ -70,7 +71,7 @@ class DistributedNotaryTests {
     @Test
     fun `should detect double spend`() {
         val masterNode = createNotaryCluster()
-        val alice = createAliceNode(masterNode.net.myAddress)
+        val alice = createAliceNode(NetworkMapInfo(masterNode.net.myAddress as NetworkMapAddress, masterNode.info.legalIdentity.name))
 
         val notaryParty = alice.netMapCache.getAnyNotary(RaftValidatingNotaryService.type)!!
 
@@ -102,7 +103,7 @@ class DistributedNotaryTests {
         val notaryKeyTree = CompositeKey.Builder().addKeys(keyPairs.map { it.public.composite }).build(1)
         val notaryParty = Party(notaryName, notaryKeyTree).serialize()
 
-        var networkMapAddress: SingleMessageRecipient? = null
+        var networkMapService: NetworkMapInfo? = null
 
         val cluster = keyPairs.mapIndexed { i, keyPair ->
             val dir = Paths.get(baseDir, "notaryNode$i")
@@ -115,13 +116,13 @@ class DistributedNotaryTests {
             keyPair.serialize().writeToFile(dir.resolve(privateKeyFile))
 
             val node: Node
-            if (networkMapAddress == null) {
+            if (networkMapService == null) {
                 val config = generateConfig(dir, "node" + random63BitValue(), notaryClusterAddress)
                 node = createNotaryNode(config)
-                networkMapAddress = node.net.myAddress
+                networkMapService = NetworkMapInfo(node.net.myAddress as NetworkMapAddress, node.info.legalIdentity.name)
             } else {
                 val config = generateConfig(dir, "node" + random63BitValue(), freeLocalHostAndPort(), notaryClusterAddress)
-                node = createNotaryNode(config, networkMapAddress)
+                node = createNotaryNode(config, networkMapService)
             }
 
             node
@@ -130,13 +131,13 @@ class DistributedNotaryTests {
         return cluster.first()
     }
 
-    private fun createNotaryNode(config: FullNodeConfiguration, networkMapAddress: SingleMessageRecipient? = null): Node {
-        val extraAdvertisedServices = if (networkMapAddress == null) setOf(ServiceInfo(NetworkMapService.type, "NMS")) else emptySet<ServiceInfo>()
+    private fun createNotaryNode(config: FullNodeConfiguration, networkMapService: NetworkMapInfo? = null): Node {
+        val extraAdvertisedServices = if (networkMapService == null) setOf(ServiceInfo(NetworkMapService.type, "NMS")) else emptySet<ServiceInfo>()
 
         val notaryNode = Node(
                 configuration = config,
                 advertisedServices = extraAdvertisedServices + ServiceInfo(RaftValidatingNotaryService.type, notaryName),
-                networkMapAddress = networkMapAddress)
+                networkMapService = networkMapService)
 
         notaryNode.setup().start()
         thread { notaryNode.run() }
@@ -144,12 +145,12 @@ class DistributedNotaryTests {
         return notaryNode
     }
 
-    private fun createAliceNode(networkMapAddress: SingleMessageRecipient): Node {
+    private fun createAliceNode(networkMapService: NetworkMapInfo): Node {
         val aliceDir = Paths.get(baseDir, "alice")
         val alice = Node(
                 configuration = generateConfig(aliceDir, "Alice"),
                 advertisedServices = setOf(),
-                networkMapAddress = networkMapAddress)
+                networkMapService = networkMapService)
         alice.setup().start()
         thread { alice.run() }
         alice.networkMapRegistrationFuture.getOrThrow()

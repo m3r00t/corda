@@ -105,8 +105,12 @@ class MockNetwork(private val networkSendManuallyPumped: Boolean = false,
                 }
             }
 
-    open class MockNode(config: NodeConfiguration, val mockNet: MockNetwork, networkMapAddr: SingleMessageRecipient?,
-                        advertisedServices: Set<ServiceInfo>, val id: Int, val keyPair: KeyPair?) : AbstractNode(config, networkMapAddr, advertisedServices, TestClock()) {
+    open class MockNode(config: NodeConfiguration,
+                        val mockNet: MockNetwork,
+                        override val networkMapAddress: SingleMessageRecipient?,
+                        advertisedServices: Set<ServiceInfo>,
+                        val id: Int,
+                        val keyPair: KeyPair?) : AbstractNode(config, advertisedServices, TestClock()) {
         override val log: Logger = loggerFor<MockNode>()
         override val serverThread: AffinityExecutor =
                 if (mockNet.threadPerNode)
