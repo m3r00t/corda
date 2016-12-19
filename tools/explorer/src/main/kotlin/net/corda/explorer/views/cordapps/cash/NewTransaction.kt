@@ -66,7 +66,7 @@ class NewTransaction : Fragment() {
     private val currencyItems = ChosenList(transactionTypeCB.valueProperty().map {
         when(it){
             CashTransaction.Pay -> ReportingCurrencyModel().supportedCurrencies
-                CashTransaction.Issue-> currencyTypes(myIdentity.value)
+            CashTransaction.Issue-> IssuerModel().currencyTypes()
             else -> FXCollections.emptyObservableList()
         }
     })
@@ -144,7 +144,7 @@ class NewTransaction : Fragment() {
         root.disableProperty().bind(enableProperty.not())
 
         // Transaction Types Choice Box
-        transactionTypeCB.items = transactionTypes(myIdentity.value)
+        transactionTypeCB.items = IssuerModel().transactionTypes()
 
         // Party A textfield always display my identity name, not editable.
         partyATextField.isEditable = false

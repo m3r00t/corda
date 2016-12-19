@@ -33,7 +33,6 @@ class NetworkIdentityModel {
 
     val parties: ObservableList<NodeInfo> = networkIdentities.filtered { !it.isCordaService() }
     val notaries: ObservableList<NodeInfo> = networkIdentities.filtered { it.advertisedServices.any { it.info.type.isNotary() } }
-    val issuers: ObservableList<NodeInfo> = networkIdentities.filtered { it.advertisedServices.any { it.info.type.id.matches(Regex("corda.issuer.(USD|GBP|CHF)")) } }
     val myIdentity = rpcProxy.map { it?.nodeIdentity() }
 
     private fun NodeInfo.isCordaService(): Boolean {

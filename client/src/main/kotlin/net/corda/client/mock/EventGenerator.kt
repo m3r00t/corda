@@ -18,7 +18,6 @@ class EventGenerator(
         val currencies: List<Currency> = listOf(USD, GBP, CHF),
         val issuers:List<Party> = parties
 ) {
-
     private var vault = listOf<StateAndRef<Cash.State>>()
 
     val issuerGenerator =
