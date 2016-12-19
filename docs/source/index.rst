@@ -40,13 +40,10 @@ Read on to learn:
    key-concepts
    key-concepts-ecosystem
    key-concepts-data-model
-   clauses
-   merkle-trees
    key-concepts-core-types
    key-concepts-financial-model
    key-concepts-flow-framework
    key-concepts-consensus-notaries
-   consensus
    key-concepts-vault
    key-concepts-security-model
 

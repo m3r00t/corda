@@ -19,19 +19,17 @@ Like with a cryptocurrency wallet, the Corda vault understands how to create tra
 by combining asset states and possibly adding a change output that makes the values balance. This process is usually referred to as ‘coin selection’.
 Vault spending ensures that transactions respect the fungibility rules in order to ensure that the issuer and reference data is preserved as the assets pass from hand to hand.
 
-.. note:: future implementations of the Vault will define common contract types to facilitate interoperability and compatibility.
-
 The following diagram illustrates the breakdown of the vault into sub-system components:
 
 .. image:: resources/vault.png
 
 Note the following:
 
-* the Core Vault "On Ledger" store tracks unconsumed state and is updated internally by the node upon recording of a transaction on the ledger (following succesful smart contract verification and signature by all participants)
-* the Core Vault "Off Ledger" store refers to additional data added by the node owner subsequent to transaction recording
-* the Core Vault performs transaction processing
+* the vault "On Ledger" store tracks unconsumed state and is updated internally by the node upon recording of a transaction on the ledger (following succesful smart contract verification and signature by all participants)
+* the vault "Off Ledger" store refers to additional data added by the node owner subsequent to transaction recording
+* the vault performs transaction processing
 * Vault extensions represent additional custom plugin code a developer may write to query specific custom contract state attributes.
-* Customer "Off Ledger (private store) represents internal organisational data that may be joined with the vault data to perform additional reporting or processing
+* Customer "Off Ledger" (private store) represents internal organisational data that may be joined with the vault data to perform additional reporting or processing
 * a vault API is exposed to developers using standard Corda RPC and CorDapp plugin mechanisms
 * additionally the vault database schemas are directly accessible via JDBC for customer joins and queries
 

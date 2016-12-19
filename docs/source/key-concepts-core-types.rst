@@ -18,13 +18,15 @@ information, such as the *notary* pointer (see :doc:`consensus`).
 A number of interfaces then extend ``ContractState``, representing standardised functionality for common kinds
 of state such as
 
-  ``OwnableState``
-    A state which has an owner (represented as a ``CompositeKey``, discussed later). Exposes the owner and a function
-    for replacing the owner e.g. when an asset is sold.
+      ``OwnableState``
 
-  ``SchedulableState``
-    A state to indicate whether there is some activity to be performed at some future point in time with respect to this
-   contract, what that activity is and at what point in time it should be initiated.
+      A state which has an owner (represented as a ``CompositeKey``, discussed later). Exposes the owner and a function
+      for replacing the owner e.g. when an asset is sold.
+
+      ``SchedulableState``
+
+      A state to indicate whether there is some activity to be performed at some future point in time with respect to this
+      contract, what that activity is and at what point in time it should be initiated.
 
 NamedByHash and UniqueIdentifier
 --------------------------------

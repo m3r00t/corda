@@ -1,7 +1,7 @@
 Financial Model
 ===============
 
-Corda provides a large standard library of data types used in financial transactions and contract state objects.
+Corda provides a large standard library of data types used in financial applications and contract state objects.
 These provide a common language for states and contracts.
 
 Amount
@@ -13,7 +13,9 @@ the *token*. For instance it can be the standard JDK type ``Currency``, or an ``
 a more complex type such as an obligation contract issuance definition (which in turn contains a token definition
 for whatever the obligation is to be settled in).
 
-.. note:: Fungible is used here to mean that instances of an asset is interchangeable for any other identical instance, and that they can be split/merged. For example a £5 note can reasonably be exchanged for any other £5 note, and a £10 note can be exchanged for two £5 notes, or vice-versa.
+.. note:: Fungible is used here to mean that instances of an asset is interchangeable for any other identical instance,
+          and that they can be split/merged. For example a £5 note can reasonably be exchanged for any other £5 note, and
+          a £10 note can be exchanged for two £5 notes, or vice-versa.
 
 Here are some examples:
 
@@ -40,7 +42,8 @@ Financial States
 In additional to the common state types, a number of interfaces extend ``ContractState`` to model financial state such as:
 
   ``LinearState``
-    A state which links back to its previous state, creating a thread of states over time. A linear state is
+    A state which has a unique identifier beyond its StateRef and carries it through state transitions.
+    Such a state cannot be duplicated, merged or split in a transaction: only continued or deleted. A linear state is
     useful when modelling an indivisible/non-fungible thing like a specific deal, or an asset that can't be
     split (like a rare piece of art).
 

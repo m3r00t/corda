@@ -7,19 +7,19 @@ Flows enable complex multi-step, multi-party business interactions to be modelle
 The code is transformed into an asynchronous state machine, with checkpoints written to the node’s backing database when messages are sent and received.
 A node may potentially have millions of flows active at once and they may last days, across node restarts and even upgrades.
 
-Flows expose progress information to node administrators and users and may interact with people as well as other nodes.
+A flow library is provided to enable developers to re-use common flow types such as notarisation, membership broadcast and so on.
 
-A Flow library is provided to enable developers to re-use common Flow types such as notarisation, membership broadcast and so on.
-
-APIs are provided to send and receive object graphs to and from other identities on the network, embed sub-flows, and report progress to observers.
+APIs are provided to send and receive object graphs to and from other identities on the network, embed sub-flows,
+report progress information to observers and even interact with people (for manual resolution of exceptional scenarios)
 
 Flows are embedded within CorDapps and deployed to a participants node for execution.
 
-.. note:: we will be implementing the concept of a flow hospital to provide a means for a node administrator to decide whether a paused flow should be killed or repaired. Flows enter this state if they throw exceptions or explicitly request human assistance.
+.. note:: We will be implementing the concept of a flow hospital to provide a means for a node administrator to decide
+          whether a paused flow should be killed or repaired. Flows enter this state if they throw exceptions or explicitly request human assistance.
 
 Section 4 of the `Technical white paper`_ provides further detail of the above features.
 
-The following diagram illustrates a sample Multi-party Business Flow:
+The following diagram illustrates a sample multi-party business flow:
 
 .. image:: resources/flowFramework.png
 

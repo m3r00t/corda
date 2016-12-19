@@ -5,33 +5,29 @@ Corda has been designed from the ground up to implement a global, decentralised 
 untrustworthy. These weak trust assumptions require that each node actively cross-check's each other's work to reach consensus
 amongst a group of interacting participants. There is no global broadcast at any point.
 
-Security is prevalent at the following levels:
+The security model plays a role in the following areas:
 
 * Identity
   Corda is designed for semi-private networks in which admission requires obtaining an identity signed by a root authority.
   This assumption is pervasive – the flow API provides messaging in terms of identities, with routing and delivery to underlying nodes being handled automatically.
-  There is no global broadcast at any point.
   See sections 3.2 of the `Technical white paper`_ for further details on identity and the permissioning service.
 
 * Notarisation: pluggable notaries and algorithms offering different levels of trust.
   Notaries may be validating or non-validating. A validating notary will resolve and fully check transactions they are asked to deconflict.
   Without the use of any other privacy features, they gain full visibility into every transaction.
-  On the other hand. non-validating notaries assume transaction validity and do not request transaction data or their dependencies
-  beyond the list of states consumed (and thus, their level of trust is much lower and exposed to malicious use of transaction inputs)
-  From an algorithm perspective Corda currently supports non-BFT algorithms (uniqueness and timestamping, RAFT)
+  On the other hand, non-validating notaries assume transaction validity and do not request transaction data or their dependencies
+  beyond the list of states consumed (and thus, their level of trust is much lower and exposed to malicious use of transaction inputs).
+  From an algorithm perspective Corda currently provides a distributed notary implementation that uses Raft.
 
-.. note:: future notary algorithms may include BFT and security hardware assisted non-BFT algorithms (where non-BFT algorithms
+.. note:: Future notary algorithms may include BFT and security hardware assisted non-BFT algorithms (where non-BFT algorithms
     are converted into a more trusted form using remote attestation and hardware protection).
 
-* Authentication
-  Network permissioning including node to node authentication is performed using TLS and certificates.
+* Authentication, authorisation and entitlements:
+  Network permissioning, including node to node authentication, is performed using TLS and certificates.
   See :doc:`permissioning` for further detail.
 
 .. warning:: API level authentication (RPC, Web) is currently simple username/password for demonstration purposes and will be revised.
-
-* Authorisation and entitlements
-
-.. warning:: API level authorisation (RPC, Web) is currently based on permission groups applied to flow execution.
+    Similarly, authorisation is currently based on permission groups applied to flow execution.
     This is subject to design review with views to selecting a proven, mature entitlements solution.
 
 * Privacy techniques include the following:
@@ -42,7 +38,7 @@ Security is prevalent at the following levels:
 
     * Multi-signature support: Corda uses composite keys to support scenarios where more than one key or party is required to authorise a state object transition.
 
-.. note:: Future privacy techniques will include key randomisation, graph pruning, deterministic JVM sandboxing and support fo secure signing devices.
+.. note:: Future privacy techniques will include key randomisation, graph pruning, deterministic JVM sandboxing and support for secure signing devices.
     See sections 10 and 13 of the `Technical white paper`_ for detailed descriptions of these techniques and features.
 
 .. _`Technical white paper`: _static/corda-technical-whitepaper.pdf
