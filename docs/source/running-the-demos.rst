@@ -38,7 +38,7 @@ To run from the command line:
 1. Run ``./gradlew samples:trader-demo:deployNodes`` to create a set of configs and installs under ``samples/trader-demo/build/nodes``
 2. Run ``./samples/trader-demo/build/nodes/runnodes`` (or ``runnodes.bat`` on Windows) to open up four new terminals with the four nodes.
 3. Run ``./gradlew samples:trader-demo:runBuyer`` to instruct the buyer node to request issuance of some cash from the Bank of Corda node.
-   This step is not expected to print much.
+   This step will display progress information related to the cash issuance process (in the bank of corda node log output).
 4. Run ``./gradlew samples:trader-demo:runSeller`` to trigger the transaction. You can see both sides of the
    trade print their progress and final transaction state in the bank node tabs/windows.
 
