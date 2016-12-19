@@ -5,19 +5,20 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import com.typesafe.config.ConfigFactory
+import net.corda.core.crypto.Party
 import net.corda.core.crypto.composite
 import net.corda.core.crypto.generateKeyPair
-import net.corda.core.messaging.Message
-import net.corda.core.messaging.RPCOps
-import net.corda.core.messaging.createMessage
+import net.corda.core.messaging.*
+import net.corda.core.node.NodeInfo
 import net.corda.core.node.services.DEFAULT_SESSION_ID
+import net.corda.core.node.services.NetworkMapCache
+import net.corda.core.node.services.PartyInfo
 import net.corda.core.utilities.LogHelper
 import net.corda.node.services.config.FullNodeConfiguration
 import net.corda.node.services.config.NodeConfiguration
 import net.corda.node.services.config.configureWithDevSSLCertificate
 import net.corda.node.services.messaging.ArtemisMessagingServer
 import net.corda.node.services.messaging.NodeMessagingClient
-import net.corda.node.services.network.InMemoryNetworkMapCache
 import net.corda.node.services.network.NetworkMapService
 import net.corda.node.services.transactions.PersistentUniquenessProvider
 import net.corda.node.utilities.AffinityExecutor.ServiceAffinityExecutor
@@ -33,6 +34,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import rx.Observable
 import java.io.Closeable
 import java.net.ServerSocket
 import java.nio.file.Path
@@ -58,7 +60,20 @@ class ArtemisMessagingTests {
     var messagingClient: NodeMessagingClient? = null
     var messagingServer: ArtemisMessagingServer? = null
 
-    val networkMapCache = InMemoryNetworkMapCache()
+    private val networkMapCache = object : NetworkMapCache {
+        override val mapServiceRegistered: ListenableFuture<Unit> get() = networkMapRegistrationFuture
+        override val changed: Observable<NetworkMapCache.MapChange> get() = Observable.empty()
+        override val partyNodes: List<NodeInfo> get() = throw UnsupportedOperationException()
+        override val networkMapNodes: List<NodeInfo> get() = throw UnsupportedOperationException()
+        override fun track(): Pair<List<NodeInfo>, Observable<NetworkMapCache.MapChange>> = throw UnsupportedOperationException()
+        override fun getPartyInfo(party: Party): PartyInfo? = throw UnsupportedOperationException()
+        override fun addMapService(net: MessagingService, networkMapAddress: SingleMessageRecipient, subscribe: Boolean,
+                                   ifChangedSinceVer: Int?): ListenableFuture<Unit> = throw UnsupportedOperationException()
+        override fun addNode(node: NodeInfo): Unit = throw UnsupportedOperationException()
+        override fun removeNode(node: NodeInfo): Unit = throw UnsupportedOperationException()
+        override fun deregisterForUpdates(net: MessagingService, service: NodeInfo): ListenableFuture<Unit> = throw UnsupportedOperationException()
+        override fun runWithoutMapService(): Unit = throw UnsupportedOperationException()
+    }
 
     val rpcOps = object : RPCOps {
         override val protocolVersion: Int get() = throw UnsupportedOperationException()
@@ -229,7 +244,7 @@ class ArtemisMessagingTests {
                     identity.public.composite,
                     ServiceAffinityExecutor("ArtemisMessagingTests", 1),
                     database,
-                    networkMapRegistrationFuture).apply {
+                    networkMapCache).apply {
                 config.configureWithDevSSLCertificate()
                 messagingClient = this
             }

@@ -17,11 +17,11 @@ import net.corda.node.services.RPCUserService
 import net.corda.node.services.RPCUserServiceImpl
 import net.corda.node.services.api.MessagingServiceInternal
 import net.corda.node.services.config.FullNodeConfiguration
+import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.NODE_USER
 import net.corda.node.services.messaging.ArtemisMessagingComponent.NetworkMapAddress
 import net.corda.node.services.messaging.ArtemisMessagingServer
 import net.corda.node.services.messaging.CordaRPCClient
 import net.corda.node.services.messaging.NodeMessagingClient
-import net.corda.node.services.startFlowPermission
 import net.corda.node.services.transactions.PersistentUniquenessProvider
 import net.corda.node.services.transactions.RaftUniquenessProvider
 import net.corda.node.services.transactions.RaftValidatingNotaryService
@@ -53,7 +53,6 @@ import java.util.*
 import javax.management.ObjectName
 import javax.servlet.*
 import kotlin.concurrent.thread
-import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.NODE_USER
 
 class ConfigurationException(message: String) : Exception(message)
 
@@ -133,7 +132,7 @@ class Node(override val configuration: FullNodeConfiguration, networkMapAddress:
         }
         val legalIdentity = obtainLegalIdentity()
         val myIdentityOrNullIfNetworkMapService = if (networkMapService != null) legalIdentity.owningKey else null
-        return NodeMessagingClient(configuration, serverAddr, myIdentityOrNullIfNetworkMapService, serverThread, database, networkMapRegistrationFuture)
+        return NodeMessagingClient(configuration, serverAddr, myIdentityOrNullIfNetworkMapService, serverThread, database, netMapCache)
     }
 
     override fun startMessagingService(rpcOps: RPCOps) {

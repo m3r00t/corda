@@ -1,10 +1,10 @@
 package net.corda.node.services.messaging
 
 import com.google.common.net.HostAndPort
-import com.google.common.util.concurrent.ListenableFuture
 import net.corda.core.ThreadBox
 import net.corda.core.crypto.CompositeKey
 import net.corda.core.messaging.*
+import net.corda.core.node.services.NetworkMapCache
 import net.corda.core.node.services.PartyInfo
 import net.corda.core.serialization.SerializedBytes
 import net.corda.core.serialization.opaque
@@ -56,7 +56,7 @@ class NodeMessagingClient(override val config: NodeConfiguration,
                           val myIdentity: CompositeKey?,
                           val executor: AffinityExecutor,
                           val database: Database,
-                          val networkMapRegistrationFuture: ListenableFuture<Unit>) : ArtemisMessagingComponent(), MessagingServiceInternal {
+                          val networkMapCache: NetworkMapCache) : ArtemisMessagingComponent(), MessagingServiceInternal {
     companion object {
         private val log = loggerFor<NodeMessagingClient>()
 
@@ -138,7 +138,7 @@ class NodeMessagingClient(override val config: NodeConfiguration,
             // Create a queue, consumer and producer for handling P2P network messages.
             createQueueIfAbsent(SimpleString(P2P_QUEUE))
             p2pConsumer = makeP2PConsumer(session, true)
-            networkMapRegistrationFuture.success {
+            networkMapCache.mapServiceRegistered.success {
                 state.locked {
                     log.info("Network map is complete, so removing filter from P2P consumer.")
                     try {
@@ -224,7 +224,7 @@ class NodeMessagingClient(override val config: NodeConfiguration,
             p2pConsumer!!
         }
 
-        while (!networkMapRegistrationFuture.isDone && processMessage(consumer)) {
+        while (!networkMapCache.mapServiceRegistered.isDone && processMessage(consumer)) {
         }
     }
 
@@ -379,14 +379,17 @@ class NodeMessagingClient(override val config: NodeConfiguration,
                 putStringProperty(HDR_DUPLICATE_DETECTION_ID, SimpleString(message.uniqueMessageId.toString()))
             }
 
-            log.info("Send to: $mqAddress topic: ${message.topicSession.topic} sessionID: ${message.topicSession.sessionID} uuid: ${message.uniqueMessageId}")
+            log.info("Send to: $mqAddress topic: ${message.topicSession.topic} sessionID: ${message.topicSession.sessionID} " +
+                    "uuid: ${message.uniqueMessageId}")
             producer!!.send(mqAddress, artemisMessage)
         }
     }
 
     private fun getMQAddress(target: MessageRecipients): SimpleString {
-        return if (target == myAddress) {
-            // If we are sending to ourselves then route the message directly to our P2P queue.
+        val sendToSelf = target == myAddress || target is ServiceAddress &&
+                networkMapCache.getNodesByAdvertisedServiceIdentityKey(target.identity).any { it.address == myAddress }
+        return if (sendToSelf) {
+            // If we are sending to ourselves, or if we're part of a service, then route the message directly to our P2P queue.
             SimpleString(P2P_QUEUE)
         } else {
             // Otherwise we send the message to an internal queue for the target residing on our broker. It's then the
